@@ -50,9 +50,9 @@ object PushdownAggregations extends Rule[LogicalPlan] {
         // FIXME: hack to make it work with gitbase. Gitbase emits counts as INTEGER
         // but spark wants longs.
         case e@Alias(Count(_), _) =>
-          AttributeReference(e.name, IntegerType, e.nullable, e.metadata)()
+          AttributeReference(e.name, IntegerType, e.nullable, e.metadata)(e.exprId, e.qualifier)
         case e =>
-          AttributeReference(e.name, e.dataType, e.nullable, e.metadata)()
+          AttributeReference(e.name, e.dataType, e.nullable, e.metadata)(e.exprId, e.qualifier)
       }
 
       val newAggregate = aggregate.map(e => e.transformUp {

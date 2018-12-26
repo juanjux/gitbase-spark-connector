@@ -27,14 +27,14 @@ case class Query(project: Seq[Expression] = Seq(),
   private def removeSources(e: Seq[Expression]): Seq[Expression] =
     e.map(_.transformUp {
       case x: AttributeReference =>
-        AttributeReference(x.name, x.dataType, x.nullable)()
+        AttributeReference(x.name, x.dataType, x.nullable)(x.exprId, x.qualifier)
     })
 
   private def removeSourcesFromSort(e: Seq[SortOrder]): Seq[SortOrder] =
     e.map(s => {
       val child = s.child.transformUp {
         case x: AttributeReference =>
-          AttributeReference(x.name, x.dataType, x.nullable)()
+          AttributeReference(x.name, x.dataType, x.nullable)(x.exprId, x.qualifier)
       }
       SortOrder(child, s.direction)
     })
