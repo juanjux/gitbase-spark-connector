@@ -170,27 +170,44 @@ private[rule] object JoinOptimizer extends Logging {
       case None =>
     }
 
-    // Check if the Join contains all valid Nodes
-    val jd: Seq[JoinData] = j.map {
-      case jm@logical.Join(_, _, _, condition) =>
-        if (jm == j) {
-          JoinData(conditions = condition, valid = true)
-        } else {
-          logUnableToOptimize(s"Invalid node: $jm")
-          JoinData()
-        }
+    val left = getLeafJoinData(j.left)
+    val right = getLeafJoinData(j.right)
+    mergeJoinData(Seq(
+      JoinData(valid = true, conditions = j.condition),
+      left,
+      right
+    ))
+  }
+
+  private def getLeafJoinData(p: LogicalPlan): JoinData = {
+    var filter: Option[Expression] = None
+    var valid = true
+    var project: Seq[NamedExpression] = Seq()
+    var source: Option[Node] = None
+    var attributes: Seq[AttributeReference] = Seq()
+    var servers: Seq[GitbaseServer] = Seq()
+
+    p.map {
+      case jm@logical.Join(_, _, _, _) =>
+        logUnableToOptimize(s"Invalid node: $jm")
+        valid = false
       case logical.Filter(cond, _) =>
-        JoinData(filter = Some(cond), valid = true)
+        filter = Some(cond)
       case logical.Project(namedExpressions, _) =>
-        JoinData(project = namedExpressions, valid = true)
-      case DataSourceV2Relation(out, DefaultReader(servers, _, source)) =>
-        JoinData(Some(source), attributes = out, servers = servers, valid = true)
+        project = namedExpressions
+      case DataSourceV2Relation(out, DefaultReader(srvs, _, src)) =>
+        source = Some(src)
+        if (project.isEmpty) {
+          project = out
+        }
+        attributes = out
+        servers = srvs
       case other =>
         logUnableToOptimize(s"Invalid node: $other")
-        JoinData()
+        valid = false
     }
 
-    mergeJoinData(jd)
+    JoinData(source, None, filter, project, attributes, servers, valid)
   }
 
   private def getRelationTables(left: DataSourceV2Relation,

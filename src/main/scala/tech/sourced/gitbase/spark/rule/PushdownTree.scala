@@ -163,7 +163,7 @@ object PushdownTree extends Rule[LogicalPlan] {
 
           supported = supportedExp
           unsupported = Some(unsupportedNamedExp)
-        // this expression can be handled and it have no children
+        // this expression can be handled and it has no children
         case e if canBeHandled(e :: Nil) && unsupported.isEmpty =>
           val namedExp = toNamedExpression(e)
           supported = Seq(namedExp)

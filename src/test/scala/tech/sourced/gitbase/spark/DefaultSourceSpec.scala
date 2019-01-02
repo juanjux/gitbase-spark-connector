@@ -249,4 +249,34 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
       """.stripMargin)
     df.show(20, false)
   }
+
+  it should "approximately detect forks" in {
+    val result = spark.sql(
+      """SELECT
+                     commit_hash,
+                     n_repos,
+                     s.repository_id AS main_repository_id,
+                     repository_ids
+                 FROM (
+                     SELECT
+                         commit_hash,
+                         COUNT(*) n_repos,
+                         MAX(STRUCT(history_index, repository_id)) AS s,
+                         COLLECT_SET(repository_id) AS repository_ids
+                     FROM ref_commits
+                     NATURAL JOIN commits
+                     WHERE
+                         history_index != 1
+                         AND ref_name LIKE 'refs/heads/HEAD/%'
+                         AND SIZE(parse_commit_parents(commit_parents)) == 0
+                     GROUP BY commit_hash
+                 ) AS q
+                 WHERE n_repos > 1
+                 ORDER BY n_repos DESC""").collect().map(r => (r(0), r(1)))
+
+    result should equal(Array(
+      ("fff7062de8474d10a67d417ccea87ba6f58ca81d", 2),
+      ("fff840f8784ef162dc83a1465fc5763d890b68ba", 2)
+    ))
+  }
 }
