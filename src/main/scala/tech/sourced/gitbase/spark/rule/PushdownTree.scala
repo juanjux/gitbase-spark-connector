@@ -13,7 +13,7 @@ import tech.sourced.gitbase.spark._
 
 object PushdownTree extends Rule[LogicalPlan] {
 
-  /** @inheritdoc*/
+  /** @inheritdoc */
   def apply(plan: LogicalPlan): LogicalPlan = plan transformUp {
     case logical.Project(exp1, logical.Project(exp2, child))
       if containsDuplicates(exp1 ++ exp2) =>
@@ -113,7 +113,7 @@ object PushdownTree extends Rule[LogicalPlan] {
   private def toNamedExpression(expression: Expression): NamedExpression = {
     expression match {
       case e: NamedExpression => e
-      case e => Alias(e, e.toString())()
+      case e => Alias(e, e.sql)()
     }
   }
 
