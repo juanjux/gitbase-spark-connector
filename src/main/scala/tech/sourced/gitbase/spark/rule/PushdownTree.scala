@@ -137,47 +137,56 @@ object PushdownTree extends Rule[LogicalPlan] {
     * Split expressions in supported and unsupported to push down
     * only the supported ones and keep upside the unsupported
     */
-  private def splitSupportedAndUnsupportedExpressions(expressions: Seq[NamedExpression]):
+  private def splitSupportedAndUnsupportedExpressions(expressions: Seq[Expression]):
   (Seq[NamedExpression], Seq[NamedExpression]) = {
-    val (s, u) = expressions.map { exp =>
-      var supported: Seq[NamedExpression] = Nil
-      var unsupported: Option[NamedExpression] = None
-      exp.foreach {
-        // this expression cannot be handled but its children can
-        case e if !canBeHandled(e :: Nil) && canBeHandled(e.children) && unsupported.isEmpty =>
-          val (supportedExp, supportedReference) =
-            e.children.map { e =>
-              val namedExpression = toNamedExpression(e)
-              (namedExpression,
-                AttributeReference(
-                  namedExpression.name,
-                  namedExpression.dataType,
-                  namedExpression.nullable,
-                  namedExpression.metadata)
-                (namedExpression.exprId,
-                  namedExpression.qualifier)
-              )
-            }.unzip
+    import scala.collection.mutable
+    val unsupported = mutable.Buffer[NamedExpression]()
+    val supported = mutable.Buffer[NamedExpression]()
 
-          val unsupportedNamedExp = toNamedExpression(e.withNewChildren(supportedReference))
+    expressions.foreach(exp => {
+      if (canBeHandled(exp :: Nil)) {
+        val e = toNamedExpression(exp)
+        supported += e
+        unsupported += AttributeReference(
+          e.name,
+          e.dataType,
+          e.nullable,
+          e.metadata
+        )(e.exprId, e.qualifier)
+      } else if (!canBeHandled(exp :: Nil) && canBeHandled(exp.children)) {
+        unsupported += toNamedExpression(exp.withNewChildren(exp.children.map(c => {
+          val child = toNamedExpression(c)
+          supported += child
+          AttributeReference(
+            child.name,
+            child.dataType,
+            child.nullable,
+            child.metadata
+          )(child.exprId, child.qualifier)
+        })))
+      } else if (exp.children.nonEmpty) {
+        unsupported += toNamedExpression(exp.withNewChildren(exp.children.map(c => {
+          val (s, u) = splitSupportedAndUnsupportedExpressions(c :: Nil)
+          if (u.length != 1) {
+            throw new SparkException("invalid number of unsupported expressions obtained")
+          }
 
-          supported = supportedExp
-          unsupported = Some(unsupportedNamedExp)
-        // this expression can be handled and it has no children
-        case e if canBeHandled(e :: Nil) && unsupported.isEmpty =>
-          val namedExp = toNamedExpression(e)
-          supported = Seq(namedExp)
-          unsupported = Some(
-            AttributeReference(
-              namedExp.name, namedExp.dataType, namedExp.nullable, namedExp.metadata)
-            (namedExp.exprId, namedExp.qualifier))
-        case _ =>
+          supported ++= s
+          u.head match {
+            case e: Alias => e.child // remove aliases from non topmost expressions
+            case o => o
+          }
+        })))
+      } else {
+        unsupported += toNamedExpression(exp)
       }
+    })
 
-      (supported, unsupported
-        .getOrElse(throw new SparkException("No unsupported expressions on the query")))
-    }.unzip
+    if (unsupported.length != expressions.length) {
+      throw new SparkException("unsupported exceptions don't match input expressions")
+    }
 
-    (s.flatten, u)
+    (supported.toList, unsupported.toList)
   }
+
 }
