@@ -9,7 +9,7 @@ import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.sql.types.{Metadata, StructField, StructType}
+import org.apache.spark.sql.types.Metadata
 import tech.sourced.gitbase.spark._
 
 object PushdownJoins extends Rule[LogicalPlan] {
