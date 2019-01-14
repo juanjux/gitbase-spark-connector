@@ -36,7 +36,7 @@ object PushdownTree extends Rule[LogicalPlan] {
           supportedProject.map(e => StructField(e.name, e.dataType, e.nullable, e.metadata))
         )
         val newOutput = supportedProject.map(e =>
-          AttributeReference(e.name, e.dataType, e.nullable, e.metadata)()
+          AttributeReference(e.name, e.dataType, e.nullable, e.metadata)(e.exprId, e.qualifier)
         )
 
         logical.Project(unsupportedProject,
@@ -153,7 +153,9 @@ object PushdownTree extends Rule[LogicalPlan] {
                   namedExpression.name,
                   namedExpression.dataType,
                   namedExpression.nullable,
-                  namedExpression.metadata)()
+                  namedExpression.metadata)
+                (namedExpression.exprId,
+                  namedExpression.qualifier)
               )
             }.unzip
 
@@ -167,7 +169,8 @@ object PushdownTree extends Rule[LogicalPlan] {
           supported = Seq(namedExp)
           unsupported = Some(
             AttributeReference(
-              namedExp.name, namedExp.dataType, namedExp.nullable, namedExp.metadata)())
+              namedExp.name, namedExp.dataType, namedExp.nullable, namedExp.metadata)
+            (namedExp.exprId, namedExp.qualifier))
         case _ =>
       }
 

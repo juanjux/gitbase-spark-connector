@@ -227,4 +227,26 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
     ))
   }
 
+  it should "show 20 results without errors" in {
+    val df = spark.sql(
+      """
+        |SELECT
+        |  *
+        |FROM (
+        |  SELECT
+        |    COUNT(c.commit_hash) as num, c.commit_hash
+        |  FROM
+        |    ref_commits r
+        |  INNER JOIN
+        |    commits c
+        |  ON
+        |    r.repository_id = c.repository_id AND r.commit_hash = c.commit_hash
+        |  GROUP BY
+        |    c.commit_hash
+        |) t
+        |WHERE
+        |  num > 1
+      """.stripMargin)
+    df.show(20, false)
+  }
 }
