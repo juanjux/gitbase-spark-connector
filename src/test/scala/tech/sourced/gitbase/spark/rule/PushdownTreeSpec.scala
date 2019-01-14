@@ -1,7 +1,9 @@
 package tech.sourced.gitbase.spark.rule
 
 import org.apache.spark.sql.catalyst.expressions.{
-  Alias, Ascending, Attribute, CaseKeyWhen, Descending, EqualTo, Literal, SortOrder}
+  Alias, Ascending, Attribute, CaseKeyWhen,
+  Descending, EqualTo, Literal, SortOrder
+}
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
@@ -192,4 +194,5 @@ class PushdownTreeSpec extends BaseRuleSpec {
 
     PushdownTree(node).isInstanceOf[logical.GlobalLimit] should be(true)
   }
+
 }
