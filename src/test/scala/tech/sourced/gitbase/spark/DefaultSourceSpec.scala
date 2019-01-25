@@ -210,11 +210,11 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
   }
 
   it should "get commit parents using parse_commit_parents" in {
-    val result = spark.sql("SELECT repository_id, parse_commit_parents(commit_parents)" +
+    val result = spark.sql("SELECT repository_id, parse_commit_parents(commit_parents) AS parents" +
       " FROM ref_commits" +
       " NATURAL JOIN commits" +
       " WHERE ref_name LIKE 'refs/heads/HEAD/%' AND history_index = 0" +
-      " ORDER BY repository_id, 2")
+      " ORDER BY repository_id, parents")
       .collect()
       .map(row => (row(0), row(1).asInstanceOf[Seq[String]]))
 
@@ -279,4 +279,5 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
       ("fff840f8784ef162dc83a1465fc5763d890b68ba", 2)
     ))
   }
+
 }
