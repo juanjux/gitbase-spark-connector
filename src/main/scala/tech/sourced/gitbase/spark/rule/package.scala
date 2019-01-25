@@ -1,10 +1,8 @@
 package tech.sourced.gitbase.spark
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{StructField, StructType}
 
 package object rule {
@@ -40,18 +38,7 @@ package object rule {
 
   private[rule] def fixAttributeReferences(plan: LogicalPlan): LogicalPlan = {
     import JoinOptimizer._
-    val availableAttrs: Seq[Attribute] = plan.children.flatMap(child => {
-      child.find {
-        case _: logical.Project => true
-        case DataSourceV2Relation(_, _: DefaultReader) => true
-        case _: logical.Join => true
-        case _ => false
-      } match {
-        case Some(logical.Project(attrs, _)) => attrs.map(_.toAttribute)
-        case Some(DataSourceV2Relation(output, _: DefaultReader)) => output
-        case _ => Seq()
-      }
-    })
+    val availableAttrs: Seq[Attribute] = plan.children.flatMap(_.output)
 
     plan.transformExpressionsUp {
       case a: Attribute =>

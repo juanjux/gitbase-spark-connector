@@ -247,7 +247,7 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
         |WHERE
         |  num > 1
       """.stripMargin)
-    df.show(20, false)
+    df.show(20, truncate = false)
   }
 
   it should "approximately detect forks" in {
@@ -277,6 +277,64 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
     result should equal(Array(
       ("fff7062de8474d10a67d417ccea87ba6f58ca81d", 2),
       ("fff840f8784ef162dc83a1465fc5763d890b68ba", 2)
+    ))
+  }
+
+  it should "count HEADs excluding forks" in {
+    val result = spark.sql(
+      """SELECT
+                    COUNT(*)
+                FROM (
+                  SELECT DISTINCT
+                       s.repository_id AS repository_id
+                  FROM (
+                      SELECT
+                          commit_hash,
+                          MAX(STRUCT(history_index, repository_id)) AS s
+                      FROM ref_commits
+                      NATURAL JOIN commits
+                      WHERE
+                          history_index != 1
+                          AND ref_name LIKE 'refs/heads/HEAD/%'
+                          AND SIZE(PARSE_COMMIT_PARENTS(commit_parents)) == 0
+                      GROUP BY commit_hash
+                  ) AS q
+                ) AS q2""").collect()(0)(0)
+    result should be(3L)
+  }
+
+  it should "do repository count by language presence" in {
+    val result = spark.sql(
+      """SELECT
+                    language,
+                    COUNT(repository_id) AS repository_count
+                FROM (
+                    SELECT DISTINCT
+                        repository_id,
+                        COALESCE(language(file_path, blob_content), 'Unknown') AS language
+                    FROM ref_commits
+                    NATURAL JOIN commit_files
+                    NATURAL JOIN files
+                    WHERE
+                        ref_name LIKE 'refs/heads/HEAD/%'
+                    ) AS q2
+                GROUP BY language
+                ORDER BY repository_count DESC, language ASC""").collect().map(r => (r(0), r(1)))
+
+    result should equal(Array(
+      ("Text", 3),
+      ("", 2),
+      ("Markdown", 2),
+      ("C", 1),
+      ("C++", 1),
+      ("CMake", 1),
+      ("JSON", 1),
+      ("JavaScript", 1),
+      ("QML", 1),
+      ("Ruby", 1),
+      ("Shell", 1),
+      ("XML", 1),
+      ("desktop", 1)
     ))
   }
 
