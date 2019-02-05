@@ -62,6 +62,12 @@ Finally you can try it out from your code. Add the gitbase `DataSource` and conf
 ```scala
 import tech.sourced.gitbase.spark.GitbaseSessionBuilder
 
+// Add these lines if your are using spark-shell
+
+// import org.apache.spark.sql.SparkSession
+// SparkSession.setActiveSession(null)
+// SparkSession.setDefaultSession(null)
+
 val spark = SparkSession.builder().appName("test")
     .master("local[*]")
     .config("spark.driver.host", "localhost")
