@@ -32,6 +32,7 @@ case class GitbaseDialect(protocol: String = "jdbc:mariadb") extends JdbcDialect
   * This contains utility methods to perform operations on a Gitbase server.
   */
 object Gitbase {
+  private val RowsPerBatch = 100
 
   private val dialect = GitbaseDialect()
 
@@ -92,14 +93,12 @@ object Gitbase {
     )
 
     val stmt: PreparedStatement = connection.prepareStatement(query)
-    try {
-      val rs = stmt.executeQuery
+    stmt.setFetchSize(RowsPerBatch)
 
-      val schema = JdbcUtils.getSchema(rs, dialect, alwaysNullable = true)
-      (JdbcUtils.resultSetToRows(rs, schema), connection.close)
-    } finally {
-      stmt.close()
-    }
+    val rs = stmt.executeQuery
+
+    val schema = JdbcUtils.getSchema(rs, dialect, alwaysNullable = true)
+    (JdbcUtils.resultSetToRows(rs, schema), connection.close)
   }
 
 }

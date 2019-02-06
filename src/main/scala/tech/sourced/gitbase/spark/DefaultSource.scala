@@ -102,19 +102,31 @@ case class DefaultDataReader(server: GitbaseServer,
 
   private var iter: Iterator[Row] = _
   private var closeConn: () => Unit = _
+  private var lastRow: Row = _
+  private var open: Boolean = false
 
   override def next(): Boolean = {
     if (iter == null) {
       val (iter, close) = Gitbase.query(server, query)
       this.iter = iter
       this.closeConn = close
+      this.open = true
     }
 
-    iter.hasNext
+    val hasNext = if (open) iter.hasNext else false
+
+    if (hasNext) {
+      lastRow = iter.next
+    }
+
+    hasNext
   }
 
-  override def get(): Row = iter.next
+  override def get(): Row = lastRow
 
-  override def close(): Unit = if (closeConn != null) closeConn()
+  override def close(): Unit = {
+    this.open = false
+    if (closeConn != null) closeConn()
+  }
 
 }
