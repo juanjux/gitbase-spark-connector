@@ -98,7 +98,10 @@ object Gitbase {
     val rs = stmt.executeQuery
 
     val schema = JdbcUtils.getSchema(rs, dialect, alwaysNullable = true)
-    (JdbcUtils.resultSetToRows(rs, schema), connection.close)
+    (JdbcUtils.resultSetToRows(rs, schema), () => {
+      stmt.cancel()
+      connection.close()
+    })
   }
 
 }
