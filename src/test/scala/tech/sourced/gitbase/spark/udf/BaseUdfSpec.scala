@@ -31,7 +31,7 @@ private object BaseUdfSpec {
   val filesRows = Seq(
     ("repo", "path", "bhash", "thash", "entry", null, 0),
     ("repo-1", "src/foo.py", "hash1", "", "",
-      "with open('somefile.txt') as f: contents=f.read()".getBytes, 0),
+      "#!/usr/bin/env python\n\nwith open('somefile.txt') as f: contents=f.read()".getBytes, 0),
     ("repo-1", "src/bar.java", "hash2", "", "",
       "public class Hello extends GenericServlet { }".getBytes, 0),
     ("repo-1", "src/baz.go", "hash3", "", "", null.asInstanceOf[Array[Byte]], 0),

@@ -219,11 +219,14 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
       .map(row => (row(0), row(1).asInstanceOf[Seq[String]]))
 
     result should equal(Array(
-      ("05893125684f2d3943cd84a7ab2b75e53668fba1.siva", Seq("05e39f6b6f89eb7f9e53e42bffae844b5d869b90")),
+      ("05893125684f2d3943cd84a7ab2b75e53668fba1.siva",
+        Seq("05e39f6b6f89eb7f9e53e42bffae844b5d869b90")),
       ("fff7062de8474d10a67d417ccea87ba6f58ca81d.siva", Seq()),
       ("fff7062de8474d10a67d417ccea87ba6f58ca81d.siva", Seq()),
-      ("fff840f8784ef162dc83a1465fc5763d890b68ba.siva", Seq("9956dc89b79e37e99ec09a7c3dc18291622cfc26")),
-      ("fff840f8784ef162dc83a1465fc5763d890b68ba.siva", Seq("e9276d0ef0c802bc268eea56d05c0abca4d37ee0"))
+      ("fff840f8784ef162dc83a1465fc5763d890b68ba.siva",
+        Seq("9956dc89b79e37e99ec09a7c3dc18291622cfc26")),
+      ("fff840f8784ef162dc83a1465fc5763d890b68ba.siva",
+        Seq("e9276d0ef0c802bc268eea56d05c0abca4d37ee0"))
     ))
   }
 

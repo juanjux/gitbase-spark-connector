@@ -1,6 +1,9 @@
 package tech.sourced.gitbase.spark.udf
 
 import org.apache.spark.sql.Column
+import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.expressions.UserDefinedFunction
 
 /**
@@ -14,4 +17,16 @@ abstract class CustomUDF {
   def function: UserDefinedFunction
 
   def apply(exprs: Column*): Column = function.withName(name)(exprs: _*)
+}
+
+/**
+  * Custom named user defined expression.
+  */
+abstract class CustomExprFunction {
+  /** Name of the expression. */
+  def name: String
+
+  /** Function of the expression. */
+  def function: FunctionBuilder
+
 }

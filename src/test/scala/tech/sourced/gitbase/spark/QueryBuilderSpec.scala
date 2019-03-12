@@ -162,7 +162,7 @@ class QueryBuilderSpec extends FlatSpec with Matchers {
   "QueryBuilder.limitClause" should "return the limit clause" in {
     val qb = QueryBuilder()
     qb.limitClause() should be("")
-    qb.limitClause(Query(limit=Some(5L))) should be(" LIMIT 5")
+    qb.limitClause(Query(limit = Some(5L))) should be(" LIMIT 5")
   }
 
   "QueryBuilder.compileExpression" should "compile the expressions to SQL" in {
@@ -331,7 +331,11 @@ class QueryBuilderSpec extends FlatSpec with Matchers {
       (Language(mkCol("foo", "a"), mkCol("foo", "b")),
         "`language`(foo.`a`, foo.`b`)"),
 
-      (Uast(mkCol("foo", "a"), mkCol("foo", "b"), mkCol("foo", "c")),
+      (new Column(Uast(Seq(
+        mkCol("foo", "a").expr,
+        mkCol("foo", "b").expr,
+        mkCol("foo", "c").expr
+      ))),
         "`uast`(foo.`a`, foo.`b`, foo.`c`)"),
 
       (UastChildren(mkCol("foo", "a")),
@@ -340,7 +344,11 @@ class QueryBuilderSpec extends FlatSpec with Matchers {
       (UastExtract(mkCol("foo", "a"), mkCol("foo", "b")),
         "`uast_extract`(foo.`a`, foo.`b`)"),
 
-      (UastMode(mkCol("foo", "a"), mkCol("foo", "b"), mkCol("foo", "c")),
+      (new Column(UastMode(Seq(
+        mkCol("foo", "a").expr,
+        mkCol("foo", "b").expr,
+        mkCol("foo", "c").expr
+      ))),
         "`uast_mode`(foo.`a`, foo.`b`, foo.`c`)"),
 
       (UastXPath(mkCol("foo", "a"), mkCol("foo", "b")),
