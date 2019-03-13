@@ -4,6 +4,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.jdbc.JdbcDialects
 import tech.sourced.gitbase.spark.udf.BblfshUtils
 
 package object spark {
@@ -29,6 +30,7 @@ package object spark {
       val ss = builder.getOrCreate()
       udf.registerUDFs(ss)
       createTempViews(ss)
+      JdbcDialects.registerDialect(GitbaseDialect())
 
       builder
     }

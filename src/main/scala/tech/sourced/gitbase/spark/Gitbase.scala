@@ -26,6 +26,10 @@ case class GitbaseDialect(protocol: String = "jdbc:mariadb") extends JdbcDialect
     case _ => super.compileValue(value)
   }
 
+  override def quoteIdentifier(ident: String): String = {
+    s"`$ident`"
+  }
+
 }
 
 /**
