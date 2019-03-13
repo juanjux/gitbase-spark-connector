@@ -1,5 +1,7 @@
 package tech.sourced.gitbase.spark
 
+import java.util.Properties
+
 
 class DefaultSourceSpec extends BaseGitbaseSpec {
 
@@ -336,6 +338,25 @@ class DefaultSourceSpec extends BaseGitbaseSpec {
       ("XML", 1),
       ("desktop", 1)
     ))
+  }
+
+  it should "pull data using JDBC correctly" in {
+    val props = new Properties()
+    props.put("user", "root")
+    props.put("password", "")
+    props.put("driver", "org.mariadb.jdbc.Driver")
+
+    val rcdf = spark.read.jdbc(s"jdbc:mariadb://$server/gitbase", "ref_commits", props)
+
+    val result = rcdf.collect()
+    result.length should be(spark.table("ref_commits").count())
+
+    result.foreach(row => {
+      row(0).toString should not(be("repository_id"))
+      row(1).toString should not(be("commit_hash"))
+      row(2).toString should not(be("ref_name"))
+      row(3).isInstanceOf[Long] should be(true)
+    })
   }
 
 }
