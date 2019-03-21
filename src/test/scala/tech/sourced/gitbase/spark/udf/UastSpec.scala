@@ -3,6 +3,7 @@ package tech.sourced.gitbase.spark.udf
 import org.apache.spark.sql.types.{BinaryType, StructField}
 import org.apache.spark.sql.functions._
 
+
 class UastSpec extends BaseUdfSpec {
 
   import spark.implicits._
@@ -11,7 +12,7 @@ class UastSpec extends BaseUdfSpec {
 
   it should "work as a registered UDF" in {
     val uastDf = spark.sqlContext.sql("SELECT *, "
-      + Uast.name + "(blob_content,language(file_path, blob_content),'') AS uast FROM " +
+      + "uast(blob_content,language(file_path, blob_content),'') AS uast FROM " +
       BaseUdfSpec.filesName)
 
     uastDf.schema.fields should contain(StructField("uast", BinaryType))
@@ -35,14 +36,49 @@ class UastSpec extends BaseUdfSpec {
     )
 
     uastDf.select('file_path, 'uast).collect().foreach(row => row.getString(0) match {
-      case ("src/foo.py" | "src/bar.java" | "foo") => {
+      case "src/foo.py" | "src/bar.java" | "foo" =>
         val marshaledNodes = row.getAs[Array[Byte]](1)
         marshaledNodes should not be empty
 
         val nodes = BblfshUtils.unmarshalNodes(marshaledNodes).getOrElse(Seq.empty)
         nodes should not be empty
         nodes should have length 1
-      }
+      case _ => row.isNullAt(1) should be(true)
+    })
+  }
+
+  it should "retrieve UASTs without XPath" in {
+    val uastDf = filesDf.withColumn(
+      "uast",
+      Uast('blob_content, Language('file_path, 'blob_content))
+    )
+
+    uastDf.select('file_path, 'uast).collect().foreach(row => row.getString(0) match {
+      case "src/foo.py" | "src/bar.java" | "foo" =>
+        val marshaledNodes = row.getAs[Array[Byte]](1)
+        marshaledNodes should not be empty
+
+        val nodes = BblfshUtils.unmarshalNodes(marshaledNodes).getOrElse(Seq.empty)
+        nodes should not be empty
+        nodes should have length 1
+      case _ => row.isNullAt(1) should be(true)
+    })
+  }
+
+  it should "retrieve UASTs without XPath and language" in {
+    val uastDf = filesDf.withColumn(
+      "uast",
+      Uast('blob_content)
+    )
+
+    uastDf.select('file_path, 'uast).collect().foreach(row => row.getString(0) match {
+      case "src/foo.py" | "foo" =>
+        val marshaledNodes = row.getAs[Array[Byte]](1)
+        marshaledNodes should not be empty
+
+        val nodes = BblfshUtils.unmarshalNodes(marshaledNodes).getOrElse(Seq.empty)
+        nodes should not be empty
+        nodes should have length 1
       case _ => row.isNullAt(1) should be(true)
     })
   }

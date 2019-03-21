@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
-
 import scala.util.control.NonFatal
 
 package object udf {
@@ -12,12 +11,15 @@ package object udf {
 
   private val gitbaseUdfs = Seq(
     Language,
-    Uast,
-    UastMode,
     UastXPath,
     UastExtract,
     UastChildren,
     IsBinary
+  )
+
+  private val gitbaseExprs = Seq(
+    Uast,
+    UastMode
   )
 
   private val udfs = Seq(
@@ -25,13 +27,16 @@ package object udf {
     ParseCommitParents
   )
 
-
-  def isSupported(name: String): Boolean = gitbaseUdfs.exists(f => f.name == name)
+  def isSupported(name: String): Boolean = gitbaseUdfs.exists(f => f.name == name) ||
+    gitbaseExprs.exists(f => f.name == name)
 
   def registerUDFs(ss: SparkSession): Unit = {
     spark = ss
     gitbaseUdfs.foreach(f => spark.udf.register(f.name, f.function.withName(f.name)))
     udfs.foreach(f => spark.udf.register(f.name, f.function.withName(f.name)))
+    gitbaseExprs.foreach(f =>
+      spark.sessionState.functionRegistry.createOrReplaceTempFunction(f.name, f.function)
+    )
   }
 
   private[udf] object JsonArrayParser extends Logging {

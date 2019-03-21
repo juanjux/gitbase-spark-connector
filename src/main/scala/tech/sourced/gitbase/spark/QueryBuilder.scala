@@ -5,6 +5,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference,
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.types._
+import tech.sourced.gitbase.spark.udf.{Uast, UastMode}
 
 object QueryBuilder {
 
@@ -168,6 +169,22 @@ object QueryBuilder {
       // distinct in aggregations yet.
       case AggregateExpression(fn, _, false, _) =>
         compileExpression(fn)
+
+      case Uast(children) =>
+        val args = children.map(compileExpression)
+        if (args.forall(_.isDefined)) {
+          Some(s"`uast`(${args.map(_.get).mkString(", ")})")
+        } else {
+          None
+        }
+
+      case UastMode(children) =>
+        val args = children.map(compileExpression)
+        if (args.forall(_.isDefined)) {
+          Some(s"`uast_mode`(${args.map(_.get).mkString(", ")})")
+        } else {
+          None
+        }
 
       case _ => None
     }
